@@ -253,6 +253,7 @@ void editorUpdateSyntax(erow* row) {
 		if (scs_len && !in_string) {
 			if (!strncmp(&row->render[i], scs, scs_len)) {
 				memset(&row->hl[i], HL_COMMENT, row->rsize - i);
+				break;
 			}
 		}
 		
@@ -719,7 +720,17 @@ void editorDrawRows(struct abuf* ab) {
 			unsigned char* hl = &E.row[fileRow].hl[E.coloff];
 			int current_color = -1;
 			for (int j = 0; j < len; j++) {
-				if (hl[j] == HL_NORMAL) {
+				if (iscntrl(c[j])) {
+					char sym = (c[j] <= 26) ? '@' + c[j] : '?';
+					abufAppend(ab, "\x1b[7m", 4);
+					abufAppend(ab, &sym, 1);
+					abufAppend(ab, "\x1b[m", 3);
+					if (current_color != -1) {
+						char buf[16];
+						int clen = snprintf(buf, sizeof(buf), "x1b[%dm", current_color);
+						abufAppend(ab, buf, clen);
+					}
+				} else if (hl[j] == HL_NORMAL) {
 					if (current_color != -1) {
 						abufAppend(ab, "\x1b[39m", 5);
 						current_color = -1;
